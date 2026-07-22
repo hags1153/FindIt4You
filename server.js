@@ -1,124 +1,35 @@
 /**
- * Finder — zero-dependency prototype server.
- * Serves the /public web prototype and a small JSON API backed by data/requests.json.
- * No npm install needed: pure Node http/fs. Start with `node server.js`.
+ * FindIt4You — API server (Supabase-backed).
+ *
+ * Browsing finds is public (so the landing demo stays alive without login).
+ * Posting / claiming / advancing a find requires a logged-in user: the browser
+ * signs in with Supabase Auth and sends its access token as a Bearer header,
+ * which we verify here. All DB access uses the service-role client.
  */
+require('dotenv').config();
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { supabase, isConfigured, getUserFromToken } = require('./db/client.js');
 
 const PORT = process.env.PORT || 4200;
 const ROOT = __dirname;
 const PUBLIC = path.join(ROOT, 'public');
-const DATA_FILE = path.join(ROOT, 'data', 'requests.json');
 
 const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
+  '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
 };
 
-// ---- Seed data: real TJ Maxx / Marshalls / HomeGoods "finds" behavior ----
-const SEED = [
-  {
-    title: 'Le Creuset 5.5qt Dutch Oven',
-    detail: 'Any color, but cerise (red) is the dream. Round, not oval.',
-    category: 'Home',
-    size: '5.5 qt',
-    maxPrice: 220,
-    reward: 35,
-    region: 'Nashville, TN',
-    deadline: 'This week',
-    buyerName: 'Ashley R.',
-    status: 'open',
-  },
-  {
-    title: 'Stanley Quencher 40oz — Rose Quartz',
-    detail: 'The pink one everyone sells out of. Must be 40oz with handle.',
-    category: 'Drinkware',
-    size: '40 oz',
-    maxPrice: 45,
-    reward: 15,
-    region: 'Nashville, TN',
-    deadline: '3 days',
-    buyerName: 'Mia T.',
-    finderName: 'Jayme',
-    status: 'claimed',
-  },
-  {
-    title: 'Barefoot Dreams CozyChic blanket',
-    detail: 'Throw size, cream or oatmeal. The soft ribbed one.',
-    category: 'Home',
-    size: 'Throw',
-    maxPrice: 120,
-    reward: 25,
-    region: 'Franklin, TN',
-    deadline: 'Flexible',
-    buyerName: 'Dana K.',
-    finderName: 'Jayme',
-    status: 'found',
-    proof: 'Found at HomeGoods Cool Springs — cream, $99.99. Photo attached.',
-  },
-  {
-    title: 'UGG Tasman slippers — Women’s 8, Chestnut',
-    detail: 'The suede moccasin slippers. Chestnut color, size 8.',
-    category: 'Shoes',
-    size: 'W8',
-    maxPrice: 90,
-    reward: 20,
-    region: 'Nashville, TN',
-    deadline: '1 week',
-    buyerName: 'Priya S.',
-    finderName: 'Carla',
-    status: 'completed',
-    proof: 'Picked up at Marshalls Green Hills, $79.99. Buyer confirmed pickup.',
-  },
-  {
-    title: 'Diptyque Baies candle',
-    detail: '190g classic size. Marshalls/TJ Maxx sometimes gets these.',
-    category: 'Beauty',
-    size: '190 g',
-    maxPrice: 55,
-    reward: 15,
-    region: 'Brentwood, TN',
-    deadline: '2 weeks',
-    buyerName: 'Rebecca L.',
-    status: 'open',
-  },
-];
+const STATUS_FLOW = ['open', 'claimed', 'found', 'completed'];
 
-// ---- Tiny JSON "DB" ----
-function loadData() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length) return parsed;
-  } catch (_) { /* fall through to seed */ }
-  return seed();
-}
+// finds + embedded buyer/finder profile names (two FKs to profiles → disambiguate by constraint)
+const FIND_SELECT =
+  '*, buyer:profiles!finds_buyer_id_fkey(id,full_name,rating), finder:profiles!finds_finder_id_fkey(id,full_name,rating)';
 
-function seed() {
-  const now = Date.now();
-  const data = SEED.map((r, i) => ({
-    id: 'req_' + (i + 1),
-    photo: null,
-    createdAt: now - (SEED.length - i) * 3600_000,
-    ...r,
-  }));
-  saveData(data);
-  return data;
-}
-
-function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-let requests = loadData();
-
-// ---- helpers ----
+// ---- helpers ----------------------------------------------------------------
 function send(res, status, body, headers = {}) {
   const payload = typeof body === 'string' ? body : JSON.stringify(body);
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', ...headers });
@@ -129,98 +40,149 @@ function readBody(req) {
   return new Promise((resolve) => {
     let data = '';
     req.on('data', (c) => (data += c));
-    req.on('end', () => {
-      try { resolve(data ? JSON.parse(data) : {}); }
-      catch { resolve({}); }
-    });
+    req.on('end', () => { try { resolve(data ? JSON.parse(data) : {}); } catch { resolve({}); } });
   });
+}
+
+async function authUser(req) {
+  const h = req.headers['authorization'] || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+  return getUserFromToken(token);
+}
+
+// shape a find row for the frontend
+function shapeFind(r) {
+  return {
+    id: r.id,
+    title: r.title, detail: r.detail, category: r.category, size: r.size,
+    maxPrice: r.max_price, reward: r.reward, region: r.region, deadline: r.deadline,
+    status: r.status, proof: r.proof, photoUrl: r.photo_url,
+    buyerName: r.buyer?.full_name || 'Someone',
+    finderName: r.finder?.full_name || null,
+    buyerId: r.buyer_id, finderId: r.finder_id,
+    createdAt: r.created_at,
+  };
 }
 
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split('?')[0]);
   if (urlPath === '/') urlPath = '/index.html';
   const filePath = path.join(PUBLIC, path.normalize(urlPath).replace(/^(\.\.[\/\\])+/, ''));
-  if (!filePath.startsWith(PUBLIC)) { send(res, 403, { error: 'forbidden' }); return; }
+  if (!filePath.startsWith(PUBLIC)) return send(res, 403, { error: 'forbidden' });
   fs.readFile(filePath, (err, buf) => {
-    if (err) { send(res, 404, { error: 'not found' }); return; }
-    const ext = path.extname(filePath);
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    if (err) return send(res, 404, { error: 'not found' });
+    res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] || 'application/octet-stream' });
     res.end(buf);
   });
 }
 
-const STATUS_FLOW = ['open', 'claimed', 'found', 'completed'];
-
-// ---- server ----
+// ---- server -----------------------------------------------------------------
 const server = http.createServer(async (req, res) => {
   const url = req.url.split('?')[0];
 
-  // API
-  if (url.startsWith('/api/')) {
-    // GET all requests
-    if (url === '/api/requests' && req.method === 'GET') {
-      return send(res, 200, requests);
+  if (!url.startsWith('/api/')) return serveStatic(req, res);
+
+  if (!isConfigured) return send(res, 503, { error: 'Supabase not configured (.env missing)' });
+
+  try {
+    // Public: browser needs the anon key to init Supabase Auth client
+    if (url === '/api/config' && req.method === 'GET') {
+      return send(res, 200, {
+        supabaseUrl: process.env.SUPABASE_URL,
+        anonKey: process.env.SUPABASE_ANON_KEY,
+      });
     }
-    // POST new request (buyer)
+
+    // Public: browse finds
+    if (url === '/api/requests' && req.method === 'GET') {
+      const { data, error } = await supabase
+        .from('finds').select(FIND_SELECT).order('created_at', { ascending: false });
+      if (error) return send(res, 500, { error: error.message });
+      return send(res, 200, data.map(shapeFind));
+    }
+
+    // Everything below requires auth
+    const user = await authUser(req);
+
+    // Who am I? (returns profile)
+    if (url === '/api/me' && req.method === 'GET') {
+      if (!user) return send(res, 401, { error: 'not logged in' });
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (error) return send(res, 500, { error: error.message });
+      return send(res, 200, { email: user.email, ...data });
+    }
+
+    // Update my profile (role / name / region)
+    if (url === '/api/profile' && req.method === 'POST') {
+      if (!user) return send(res, 401, { error: 'not logged in' });
+      const b = await readBody(req);
+      const patch = {};
+      if (b.role && ['buyer', 'finder', 'both'].includes(b.role)) patch.role = b.role;
+      if (typeof b.full_name === 'string') patch.full_name = b.full_name.slice(0, 120);
+      if (typeof b.region === 'string') patch.region = b.region.slice(0, 120);
+      const { data, error } = await supabase.from('profiles').update(patch).eq('id', user.id).select().single();
+      if (error) return send(res, 500, { error: error.message });
+      return send(res, 200, data);
+    }
+
+    // Post a find (buyer)
     if (url === '/api/requests' && req.method === 'POST') {
+      if (!user) return send(res, 401, { error: 'log in to post a find' });
       const b = await readBody(req);
       if (!b.title) return send(res, 400, { error: 'title required' });
-      const item = {
-        id: 'req_' + Math.random().toString(36).slice(2, 9),
+      const { data, error } = await supabase.from('finds').insert({
+        buyer_id: user.id,
         title: String(b.title).slice(0, 120),
         detail: String(b.detail || '').slice(0, 500),
         category: b.category || 'Other',
         size: b.size || '',
-        maxPrice: Number(b.maxPrice) || 0,
-        reward: Number(b.reward) || 0,
+        max_price: Number(b.maxPrice) || null,
+        reward: Number(b.reward) || null,
         region: b.region || '',
         deadline: b.deadline || 'Flexible',
-        buyerName: b.buyerName || 'You',
-        finderName: null,
-        status: 'open',
-        proof: null,
-        photo: null,
-        createdAt: Date.now(),
-      };
-      requests.unshift(item);
-      saveData(requests);
-      return send(res, 201, item);
+      }).select(FIND_SELECT).single();
+      if (error) return send(res, 500, { error: error.message });
+      return send(res, 201, shapeFind(data));
     }
-    // POST claim  /api/requests/:id/claim
+
+    // Claim a find (finder)
     const claimMatch = url.match(/^\/api\/requests\/([^/]+)\/claim$/);
     if (claimMatch && req.method === 'POST') {
-      const b = await readBody(req);
-      const item = requests.find((r) => r.id === claimMatch[1]);
-      if (!item) return send(res, 404, { error: 'not found' });
-      item.status = 'claimed';
-      item.finderName = b.finderName || 'A Finder';
-      saveData(requests);
-      return send(res, 200, item);
+      if (!user) return send(res, 401, { error: 'log in to claim' });
+      const { data: find, error: e1 } = await supabase.from('finds').select('*').eq('id', claimMatch[1]).single();
+      if (e1 || !find) return send(res, 404, { error: 'find not found' });
+      if (find.status !== 'open') return send(res, 409, { error: 'already claimed' });
+      if (find.buyer_id === user.id) return send(res, 400, { error: "can't claim your own find" });
+      const { data, error } = await supabase.from('finds')
+        .update({ finder_id: user.id, status: 'claimed' }).eq('id', find.id).select(FIND_SELECT).single();
+      if (error) return send(res, 500, { error: error.message });
+      return send(res, 200, shapeFind(data));
     }
-    // POST advance status  /api/requests/:id/advance
+
+    // Advance status (buyer or finder on the find)
     const advMatch = url.match(/^\/api\/requests\/([^/]+)\/advance$/);
     if (advMatch && req.method === 'POST') {
+      if (!user) return send(res, 401, { error: 'log in' });
       const b = await readBody(req);
-      const item = requests.find((r) => r.id === advMatch[1]);
-      if (!item) return send(res, 404, { error: 'not found' });
-      const idx = STATUS_FLOW.indexOf(item.status);
-      if (idx < STATUS_FLOW.length - 1) item.status = STATUS_FLOW[idx + 1];
-      if (b.proof) item.proof = String(b.proof).slice(0, 500);
-      saveData(requests);
-      return send(res, 200, item);
+      const { data: find, error: e1 } = await supabase.from('finds').select('*').eq('id', advMatch[1]).single();
+      if (e1 || !find) return send(res, 404, { error: 'find not found' });
+      if (![find.buyer_id, find.finder_id].includes(user.id))
+        return send(res, 403, { error: 'not your find' });
+      const idx = STATUS_FLOW.indexOf(find.status);
+      const patch = {};
+      if (idx >= 0 && idx < STATUS_FLOW.length - 1) patch.status = STATUS_FLOW[idx + 1];
+      if (b.proof) patch.proof = String(b.proof).slice(0, 500);
+      const { data, error } = await supabase.from('finds').update(patch).eq('id', find.id).select(FIND_SELECT).single();
+      if (error) return send(res, 500, { error: error.message });
+      return send(res, 200, shapeFind(data));
     }
-    // POST reset
-    if (url === '/api/reset' && req.method === 'POST') {
-      requests = seed();
-      return send(res, 200, { ok: true, count: requests.length });
-    }
-    return send(res, 404, { error: 'unknown endpoint' });
-  }
 
-  // static
-  return serveStatic(req, res);
+    return send(res, 404, { error: 'unknown endpoint' });
+  } catch (e) {
+    return send(res, 500, { error: e.message });
+  }
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\n  Finder prototype running → http://localhost:${PORT}\n`);
+  console.log(`\n  FindIt4You running → http://localhost:${PORT}  (Supabase: ${isConfigured ? 'connected' : 'NOT configured'})\n`);
 });
