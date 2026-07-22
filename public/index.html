@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FindIt4You — post what you want, a Finder gets it</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <!-- ===== NAV ===== -->
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top">
+        <span class="brand-mark">◎</span> FindIt4You
+      </a>
+      <nav class="nav-links">
+        <a href="#how">How it works</a>
+        <a href="#trust">Why it's safe</a>
+        <a href="#demo">Live demo</a>
+      </nav>
+      <a class="btn btn-sm" href="#demo">Try the demo</a>
+    </div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero" id="top">
+    <div class="wrap">
+      <div class="pill">Prototype · v0.1</div>
+      <h1>Post what you want.<br /><span class="grad">A Finder gets it.</span></h1>
+      <p class="lede">
+        The good stuff at TJ&nbsp;Maxx, Marshalls &amp; HomeGoods sells out fast — and it's
+        never at <em>your</em> store. Finder turns the chaos of those "ISO" Facebook groups into
+        something legit: post exactly what you're after, a trusted Finder goes and gets it, and
+        the money is held safe until you have it in hand.
+      </p>
+      <div class="hero-cta">
+        <a class="btn" href="#demo">See it in action ↓</a>
+        <a class="btn btn-ghost" href="#how">How it works</a>
+      </div>
+      <div class="hero-loop">
+        <span>📝 Post a find</span><i>→</i>
+        <span>🕵️ Finder claims it</span><i>→</i>
+        <span>🔒 Money held in escrow</span><i>→</i>
+        <span>📸 Proof + handoff</span><i>→</i>
+        <span>✅ Finder gets paid</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HOW ===== -->
+  <section class="band" id="how">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="sub">No inventory. No upfront cost. No getting stiffed.</p>
+      <div class="cards">
+        <div class="card">
+          <div class="num">1</div>
+          <h3>Buyers post a "find"</h3>
+          <p>Item, size, a photo, your max price, and how much you'll pay a Finder to grab it.
+             Everything is spelled out up front — no DMs, no guessing.</p>
+        </div>
+        <div class="card">
+          <div class="num">2</div>
+          <h3>Finders claim & shop</h3>
+          <p>Finders browse open requests near them and claim the ones they can find.
+             They front the cost, snap a photo, and lock it in.</p>
+        </div>
+        <div class="card">
+          <div class="num">3</div>
+          <h3>Escrow releases on proof</h3>
+          <p>The buyer's payment sits safely in escrow. Once the item is confirmed and handed
+             off, the Finder gets paid back <em>plus</em> their finder's fee.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TRUST ===== -->
+  <section class="band alt" id="trust">
+    <div class="wrap">
+      <h2>Why it's safe (and why it wins vs. the Facebook groups)</h2>
+      <div class="trust-grid">
+        <div class="trust">
+          <span class="ticon">🔒</span>
+          <h4>Escrow by default</h4>
+          <p>Money is held the second a find is claimed and only releases on proof of the item.
+             Nobody sends cash into the void.</p>
+        </div>
+        <div class="trust">
+          <span class="ticon">⭐</span>
+          <h4>Ratings & verified Finders</h4>
+          <p>Every Finder builds a reputation. Buyers see completed finds and reviews before they trust someone.</p>
+        </div>
+        <div class="trust">
+          <span class="ticon">📸</span>
+          <h4>Photo proof</h4>
+          <p>Finders show the actual item and receipt before funds release. What you see is what you get.</p>
+        </div>
+        <div class="trust">
+          <span class="ticon">⚖️</span>
+          <h4>Clear structure</h4>
+          <p>Price caps, deadlines, and finder's fees are agreed up front — so there's nothing to argue about later.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== DEMO ===== -->
+  <section class="band" id="demo">
+    <div class="wrap">
+      <h2>Live demo</h2>
+      <p class="sub">This actually works. Switch between the two sides and click through a real find.</p>
+
+      <div class="role-toggle" role="tablist">
+        <button class="role active" data-role="buyer" role="tab">🛍️ I'm a Buyer</button>
+        <button class="role" data-role="finder" role="tab">🕵️ I'm a Finder</button>
+      </div>
+
+      <!-- Buyer: post form -->
+      <div id="buyer-panel" class="panel">
+        <form id="post-form" class="post-form">
+          <h3>Post a find</h3>
+          <div class="grid2">
+            <label>What are you looking for?
+              <input name="title" required placeholder="e.g. Stanley Quencher 40oz — Rose Quartz" />
+            </label>
+            <label>Category
+              <select name="category">
+                <option>Home</option><option>Drinkware</option><option>Shoes</option>
+                <option>Beauty</option><option>Kids</option><option>Other</option>
+              </select>
+            </label>
+          </div>
+          <label>Details
+            <input name="detail" placeholder="Color, brand, condition, anything specific…" />
+          </label>
+          <div class="grid3">
+            <label>Size <input name="size" placeholder="e.g. W8 / 40oz" /></label>
+            <label>Max price ($) <input name="maxPrice" type="number" min="0" placeholder="45" /></label>
+            <label>Finder's fee ($) <input name="reward" type="number" min="0" placeholder="15" /></label>
+          </div>
+          <div class="grid3">
+            <label>Region <input name="region" placeholder="Nashville, TN" /></label>
+            <label>Deadline <input name="deadline" placeholder="This week" /></label>
+            <label>Your name <input name="buyerName" placeholder="You" /></label>
+          </div>
+          <button class="btn" type="submit">Post find →</button>
+        </form>
+      </div>
+
+      <!-- Finder: hint -->
+      <div id="finder-panel" class="panel hidden">
+        <div class="finder-hint">
+          <strong>You're browsing as a Finder.</strong> Claim any <span class="chip open">Open</span> find below,
+          then walk it through the flow: <em>claimed → found (add proof) → completed</em>. Watch the escrow badge.
+        </div>
+      </div>
+
+      <div class="feed-head">
+        <h3 id="feed-title">Open finds</h3>
+        <button id="reset" class="btn btn-ghost btn-sm">↺ Reset demo</button>
+      </div>
+      <div id="feed" class="feed"></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="wrap">
+      <p><span class="brand-mark">◎</span> <strong>FindIt4You</strong> — early prototype. Built for Ryan &amp; Jayme to kick ideas around.</p>
+      <p class="muted">Working name only. Nothing here is final — it's a sandbox to feel out the flow.</p>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
