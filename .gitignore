@@ -1,6 +1,9 @@
 # runtime state (auto-seeded on start)
 data/requests.json
 
+# secrets
+.env
+
 # node
 node_modules/
 npm-debug.log*
