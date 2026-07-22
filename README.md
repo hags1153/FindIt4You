@@ -9,7 +9,7 @@ Early prototype for Ryan & Jayme to kick ideas around.
 ## Run it
 
 ```bash
-cd ~/scout          # (local folder name; repo is FindIt4You)
+cd ~/Documents/repos/findit4you
 node server.js
 # → http://localhost:4200
 ```
