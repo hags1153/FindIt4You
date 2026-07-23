@@ -146,6 +146,8 @@ em { font-style: normal; color: var(--brand); }
 .escrow.released { border-color: rgba(110,231,183,0.4); color: var(--brand); }
 
 .proof { font-size: 13px; color: var(--muted); background: var(--bg-2); border-left: 3px solid var(--accent); padding: 10px 12px; border-radius: 8px; }
+.proof-img { display: block; }
+.proof-img img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
 .actions { display: flex; gap: 10px; margin-top: 2px; }
 .actions .btn { flex: 1; }
 

@@ -47,6 +47,7 @@ function actionsFor(r) {
 
 function findCard(r) {
   const esc = escrowState(r.status);
+  const photo = r.photoUrl ? `<a class="proof-img" href="${r.photoUrl}" target="_blank" rel="noopener"><img src="${r.photoUrl}" alt="proof photo" loading="lazy" /></a>` : '';
   const proof = r.proof ? `<div class="proof">📸 ${r.proof}</div>` : '';
   const finderLine = r.finderName ? ` · Finder: <b>${r.finderName}</b>` : '';
   return `
@@ -70,6 +71,7 @@ function findCard(r) {
         <span>Buyer: <b>${r.buyerName}</b>${finderLine}</span>
       </div>
       <div class="escrow ${esc.cls}"><span>${esc.icon}</span><span>${esc.text}</span></div>
+      ${photo}
       ${proof}
       ${actionsFor(r)}
     </article>`;
