@@ -19,6 +19,16 @@ Living plan. ✅ done · 🚧 in progress · ⏭️ next · 💭 needs a product
 - 🚧 **Chat UI** — a thread panel on claimed/active finds. (Backend ready; UI pending.)
 - ⏭️ **Realtime** — Supabase Realtime so new messages / status changes appear live without refresh.
 
+## Accounts & onboarding 🚧 (building now)
+- ✅ **Schema** — profiles get full contact info (phone, address, verification flag) + onboarding flag;
+  `wallets` + append-only `wallet_entries` ledger (the "Pre-Load" foundation); `watchlist`.
+- 🚧 **Full-info signup** — name, email, password, phone, address, role (**buyer / finder / both / not sure yet**).
+- 🚧 **Buyer/Finder as the main nav** on the landing page (two audience paths → signup).
+- 🚧 **Pre-Load nudge** — after signup, strongly urge adding funds (no card required at signup);
+  real funding lands with Stripe.
+- ⏭️ **My Account page** — Current Buys, Past Orders, Watchlist, wallet balance, profile edit.
+- 💭 **Phone verification via Twilio** — TODO (Verify API: send code → confirm → set `phone_verified`).
+
 ## Receipt validator 💭 (decision needed)
 Uploads land as images already. What should "validate" mean? Options, cheapest → richest:
 1. **Manual review** — buyer eyeballs the receipt photo before releasing escrow. (Ship now, zero cost.)
