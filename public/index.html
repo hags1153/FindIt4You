@@ -4,194 +4,135 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FindIt4You — post what you want, a Finder gets it</title>
+  <meta name="description" content="A structured, escrow-backed marketplace for hard-to-find retail finds. Post what you want; a trusted Finder gets it." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%94%8E%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/styles.css" />
   <script src="/vendor/supabase.js"></script>
+  <script src="/lib.js" defer></script>
+  <script src="/app.js" defer></script>
 </head>
 <body>
-  <!-- ===== NAV ===== -->
   <header class="nav">
     <div class="wrap nav-inner">
-      <a class="brand" href="#top">
-        <span class="brand-mark">◎</span> FindIt4You
-      </a>
+      <a class="brand" href="/"><span class="brand-mark">◎</span> FindIt4You</a>
+      <div class="mode-nav" role="tablist" aria-label="Choose your side">
+        <button class="modebtn is-on" data-mode="buyer" role="tab">🛍️ Buy</button>
+        <button class="modebtn" data-mode="finder" role="tab">🕵️ Find</button>
+      </div>
       <nav class="nav-links">
         <a href="#how">How it works</a>
         <a href="#trust">Why it's safe</a>
-        <a href="#demo">Live demo</a>
+        <a href="#market">Marketplace</a>
       </nav>
-      <div id="auth-slot" class="auth-slot">
-        <!-- filled by app.js: logged-out = buttons, logged-in = user chip -->
-      </div>
+      <div id="auth-slot" class="auth-slot"></div>
     </div>
   </header>
 
-  <!-- ===== HERO ===== -->
   <section class="hero" id="top">
     <div class="wrap">
-      <div class="pill">Live prototype · v0.2 · real accounts + database</div>
-      <h1>Post what you want.<br /><span class="grad">A Finder gets it.</span></h1>
-      <p class="lede">
-        The good stuff at TJ&nbsp;Maxx, Marshalls &amp; HomeGoods sells out fast — and it's
-        never at <em>your</em> store. FindIt4You turns the chaos of those "ISO" Facebook groups into
-        something legit: post exactly what you're after, a trusted Finder goes and gets it, and
-        the money is held safe until you have it in hand.
+      <div class="pill" data-hero-pill>For buyers</div>
+      <h1 data-hero-title>Post what you want.<br /><span class="grad">A Finder gets it.</span></h1>
+      <p class="lede" data-hero-lede>
+        The good stuff at TJ&nbsp;Maxx, Marshalls &amp; HomeGoods sells out fast — and it's never at
+        <em>your</em> store. Post exactly what you're after, a trusted Finder goes and gets it, and the
+        money is held safe until it's in your hands.
       </p>
       <div class="hero-cta">
-        <a class="btn" href="#demo">See it in action ↓</a>
-        <a class="btn btn-ghost" href="#how">How it works</a>
+        <button class="btn btn-lg" data-hero-cta>Get started</button>
+        <a class="btn btn-lg btn-ghost" href="#how">How it works</a>
       </div>
       <div class="hero-loop">
         <span>📝 Post a find</span><i>→</i>
         <span>🕵️ Finder claims it</span><i>→</i>
-        <span>🔒 Money held in escrow</span><i>→</i>
+        <span>🔒 Escrow holds funds</span><i>→</i>
         <span>📸 Proof + handoff</span><i>→</i>
         <span>✅ Finder gets paid</span>
       </div>
     </div>
   </section>
 
-  <!-- ===== HOW ===== -->
   <section class="band" id="how">
     <div class="wrap">
       <h2>How it works</h2>
       <p class="sub">No inventory. No upfront cost. No getting stiffed.</p>
       <div class="cards">
-        <div class="card">
-          <div class="num">1</div>
-          <h3>Buyers post a "find"</h3>
-          <p>Item, size, a photo, your max price, and how much you'll pay a Finder to grab it.
-             Everything is spelled out up front — no DMs, no guessing.</p>
-        </div>
-        <div class="card">
-          <div class="num">2</div>
-          <h3>Finders claim & shop</h3>
-          <p>Finders browse open requests near them and claim the ones they can find.
-             They front the cost, snap a photo, and lock it in.</p>
-        </div>
-        <div class="card">
-          <div class="num">3</div>
-          <h3>Escrow releases on proof</h3>
-          <p>The buyer's payment sits safely in escrow. Once the item is confirmed and handed
-             off, the Finder gets paid back <em>plus</em> their finder's fee.</p>
-        </div>
+        <div class="card"><div class="num">1</div><h3>Post a "find"</h3>
+          <p>Item, size, photo, your max price, and the finder's fee. Everything spelled out up front — no DMs, no guessing.</p></div>
+        <div class="card"><div class="num">2</div><h3>A Finder claims &amp; shops</h3>
+          <p>Finders browse open requests near them and claim what they can get. They front the cost and snap a photo.</p></div>
+        <div class="card"><div class="num">3</div><h3>Escrow releases on proof</h3>
+          <p>The buyer's funds sit safe in escrow. On confirmed handoff, the Finder is paid back <em>plus</em> their fee.</p></div>
       </div>
     </div>
   </section>
 
-  <!-- ===== TRUST ===== -->
   <section class="band alt" id="trust">
     <div class="wrap">
-      <h2>Why it's safe (and why it wins vs. the Facebook groups)</h2>
+      <h2>Why it's safe (and why it beats the Facebook groups)</h2>
       <div class="trust-grid">
-        <div class="trust">
-          <span class="ticon">🔒</span>
-          <h4>Escrow by default</h4>
-          <p>Money is held the second a find is claimed and only releases on proof of the item.
-             Nobody sends cash into the void.</p>
-        </div>
-        <div class="trust">
-          <span class="ticon">⭐</span>
-          <h4>Ratings & verified Finders</h4>
-          <p>Every Finder builds a reputation. Buyers see completed finds and reviews before they trust someone.</p>
-        </div>
-        <div class="trust">
-          <span class="ticon">📸</span>
-          <h4>Photo proof</h4>
-          <p>Finders show the actual item and receipt before funds release. What you see is what you get.</p>
-        </div>
-        <div class="trust">
-          <span class="ticon">⚖️</span>
-          <h4>Clear structure</h4>
-          <p>Price caps, deadlines, and finder's fees are agreed up front — so there's nothing to argue about later.</p>
-        </div>
+        <div class="trust"><span class="ticon">🔒</span><h4>Escrow by default</h4>
+          <p>Money is held the moment a find is claimed and only releases on proof. Nobody sends cash into the void.</p></div>
+        <div class="trust"><span class="ticon">⭐</span><h4>Ratings &amp; verified Finders</h4>
+          <p>Every Finder builds a reputation. Buyers see completed finds and reviews before trusting anyone.</p></div>
+        <div class="trust"><span class="ticon">📸</span><h4>Photo proof</h4>
+          <p>Finders show the actual item and receipt before funds release. What you see is what you get.</p></div>
+        <div class="trust"><span class="ticon">⚖️</span><h4>Clear structure</h4>
+          <p>Price caps, deadlines, and fees are agreed up front — nothing to argue about later.</p></div>
       </div>
     </div>
   </section>
 
-  <!-- ===== DEMO ===== -->
-  <section class="band" id="demo">
+  <section class="band" id="market">
     <div class="wrap">
       <h2>Live marketplace</h2>
-      <p class="sub">Real accounts, real database. Sign up (or use a demo login) to post a find or claim one.</p>
+      <p class="sub" data-market-sub>Real accounts, real escrow. Browse open finds, or sign in to post and claim.</p>
 
-      <!-- auth state bar -->
-      <div id="demo-auth" class="demo-auth"></div>
+      <div id="signed-out-cta" class="market-cta">
+        <span>👋 <b>Log in or sign up</b> to post a find, claim jobs, and build your wallet.</span>
+        <button class="btn btn-sm" data-signup-cta>Get started</button>
+      </div>
 
-      <!-- post form (shown when logged in) -->
       <div id="post-panel" class="panel hidden">
         <form id="post-form" class="post-form">
           <h3>Post a find</h3>
           <div class="grid2">
-            <label>What are you looking for?
-              <input name="title" required placeholder="e.g. Stanley Quencher 40oz — Rose Quartz" />
-            </label>
-            <label>Category
-              <select name="category">
-                <option>Home</option><option>Drinkware</option><option>Shoes</option>
-                <option>Beauty</option><option>Kids</option><option>Other</option>
-              </select>
-            </label>
+            <label>What are you looking for?<input name="title" required maxlength="120" placeholder="e.g. Stanley Quencher 40oz — Rose Quartz"/></label>
+            <label>Category<select name="category">
+              <option>Home</option><option>Drinkware</option><option>Shoes</option><option>Beauty</option>
+              <option>Kids</option><option>Clothing</option><option>Toys</option><option>Other</option>
+            </select></label>
           </div>
-          <label>Details
-            <input name="detail" placeholder="Color, brand, condition, anything specific…" />
-          </label>
+          <label>Details<input name="detail" maxlength="500" placeholder="Color, brand, condition, anything specific…"/></label>
           <div class="grid3">
-            <label>Size <input name="size" placeholder="e.g. W8 / 40oz" /></label>
-            <label>Max price ($) <input name="maxPrice" type="number" min="0" placeholder="45" /></label>
-            <label>Finder's fee ($) <input name="reward" type="number" min="0" placeholder="15" /></label>
+            <label>Size<input name="size" maxlength="60" placeholder="e.g. W8 / 40oz"/></label>
+            <label>Max price ($)<input name="maxPrice" type="number" min="0" placeholder="45"/></label>
+            <label>Finder's fee ($)<input name="reward" type="number" min="0" placeholder="15"/></label>
           </div>
           <div class="grid2">
-            <label>Region <input name="region" placeholder="Nashville, TN" /></label>
-            <label>Deadline <input name="deadline" placeholder="This week" /></label>
+            <label>Region<input name="region" maxlength="120" placeholder="Nashville, TN"/></label>
+            <label>Deadline<input name="deadline" maxlength="60" placeholder="This week"/></label>
           </div>
           <button class="btn" type="submit">Post find →</button>
         </form>
       </div>
 
       <div class="feed-head">
-        <h3 id="feed-title">Live finds</h3>
+        <div class="feed-tabs" id="feed-tabs">
+          <button class="ftab is-on" data-filter="all">All</button>
+          <button class="ftab" data-filter="open">Open</button>
+          <button class="ftab" data-filter="mine">Mine</button>
+        </div>
         <span id="feed-count" class="muted"></span>
       </div>
-      <div id="feed" class="feed"></div>
+      <div id="feed" class="feed"><div class="skeleton-row"></div></div>
     </div>
   </section>
 
   <footer class="foot">
     <div class="wrap">
-      <p><span class="brand-mark">◎</span> <strong>FindIt4You</strong> — early prototype. Built for Ryan &amp; Jayme to kick ideas around.</p>
-      <p class="muted">Working name only. Backed by a real Supabase database + accounts.</p>
+      <p><span class="brand-mark">◎</span> <strong>FindIt4You</strong> — post what you want, a Finder gets it.</p>
+      <p class="muted">Escrow-backed marketplace for hard-to-find retail. Early build.</p>
     </div>
   </footer>
-
-  <!-- ===== AUTH MODAL ===== -->
-  <div id="auth-modal" class="modal hidden">
-    <div class="modal-card">
-      <button class="modal-x" id="modal-close">✕</button>
-      <div class="modal-tabs">
-        <button class="mtab active" data-mode="login">Log in</button>
-        <button class="mtab" data-mode="signup">Sign up</button>
-      </div>
-      <form id="auth-form" class="auth-form">
-        <label id="name-row">Your name
-          <input name="full_name" placeholder="Jane Doe" />
-        </label>
-        <label>Email
-          <input name="email" type="email" required placeholder="you@email.com" />
-        </label>
-        <label>Password
-          <input name="password" type="password" required minlength="6" placeholder="••••••••" />
-        </label>
-        <button class="btn" type="submit" id="auth-submit">Log in</button>
-        <p id="auth-error" class="auth-error"></p>
-      </form>
-      <p class="demo-hint">
-        Demo logins: <code>jayme@demo.findit4you.app</code> (a Finder) or
-        <code>ashley@demo.findit4you.app</code> (a buyer) — password <code>findit4you-demo</code>.
-      </p>
-    </div>
-  </div>
-
-  <script src="/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Account — FindIt4You</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%94%8E%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/vendor/supabase.js"></script>
+  <script src="/lib.js" defer></script>
+  <script src="/account.js" defer></script>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="/"><span class="brand-mark">◎</span> FindIt4You</a>
+      <nav class="nav-links">
+        <a href="/">Home</a>
+        <a href="/#how">How it works</a>
+        <a href="/#market">Marketplace</a>
+      </nav>
+      <div id="auth-slot" class="auth-slot"></div>
+    </div>
+  </header>
+
+  <main class="wrap account" id="account">
+    <div class="acct-loading" id="acct-loading">Loading your account…</div>
+
+    <div id="acct-body" class="hidden">
+      <div class="acct-head">
+        <div>
+          <h1 id="acct-name">—</h1>
+          <p class="acct-sub"><span id="acct-email" class="muted"></span> · <span id="acct-role" class="rolebadge"></span></p>
+        </div>
+        <div class="acct-wallet">
+          <span class="wlabel">Wallet balance</span>
+          <span class="wbal" id="acct-balance">$0.00</span>
+          <button class="btn btn-sm" id="preload-btn">⚡ Pre-load funds</button>
+        </div>
+      </div>
+
+      <div class="acct-tabs" id="acct-tabs">
+        <button class="atab is-on" data-tab="overview">Overview</button>
+        <button class="atab" data-tab="buying">Current Buys</button>
+        <button class="atab" data-tab="orders">Past Orders</button>
+        <button class="atab" data-tab="finding">Finder Jobs</button>
+        <button class="atab" data-tab="watchlist">Watchlist</button>
+        <button class="atab" data-tab="wallet">Wallet</button>
+        <button class="atab" data-tab="profile">Profile</button>
+      </div>
+
+      <section class="atab-panel" data-panel="overview"></section>
+      <section class="atab-panel hidden" data-panel="buying"></section>
+      <section class="atab-panel hidden" data-panel="orders"></section>
+      <section class="atab-panel hidden" data-panel="finding"></section>
+      <section class="atab-panel hidden" data-panel="watchlist"></section>
+      <section class="atab-panel hidden" data-panel="wallet"></section>
+      <section class="atab-panel hidden" data-panel="profile"></section>
+    </div>
+
+    <div id="acct-signedout" class="hidden">
+      <div class="empty big">Please log in to view your account. <button class="btn btn-sm" id="so-login">Log in</button></div>
+    </div>
+  </main>
+</body>
+</html>
