@@ -13,21 +13,27 @@ Living plan. ✅ done · 🚧 in progress · ⏭️ next · 💭 needs a product
   (`POST /api/uploads/sign`), photos stored per-find, time-limited signed display URLs.
 - ✅ **Chat foundation** — `GET/POST /api/finds/:id/messages`, restricted to the buyer & finder.
 
-## Next (backend done → wire the UI)
-- 🚧 **Image uploader UI** — file picker in the "mark found" step: pick photo → upload to the
-  signed URL → attach path on advance. (Backend ready; UI pending.)
-- 🚧 **Chat UI** — a thread panel on claimed/active finds. (Backend ready; UI pending.)
-- ⏭️ **Realtime** — Supabase Realtime so new messages / status changes appear live without refresh.
+## Next
+- ⏭️ **Realtime** — swap chat's 5s polling for Supabase Realtime; live status changes.
+- ⏭️ **Deploy accounts to prod** — apply migrations 002/003 to cloud + `pm2 restart` (needs cloud DATABASE_URL).
 
-## Accounts & onboarding 🚧 (building now)
-- ✅ **Schema** — profiles get full contact info (phone, address, verification flag) + onboarding flag;
-  `wallets` + append-only `wallet_entries` ledger (the "Pre-Load" foundation); `watchlist`.
-- 🚧 **Full-info signup** — name, email, password, phone, address, role (**buyer / finder / both / not sure yet**).
-- 🚧 **Buyer/Finder as the main nav** on the landing page (two audience paths → signup).
-- 🚧 **Pre-Load nudge** — after signup, strongly urge adding funds (no card required at signup);
-  real funding lands with Stripe.
-- ⏭️ **My Account page** — Current Buys, Past Orders, Watchlist, wallet balance, profile edit.
-- 💭 **Phone verification via Twilio** — TODO (Verify API: send code → confirm → set `phone_verified`).
+## Accounts & onboarding ✅ (built locally, tested)
+- ✅ **Schema** — profiles full contact info + onboarding flag; `wallets` + append-only
+  `wallet_entries` ledger; `watchlist`.
+- ✅ **Full-info signup** — name, email, password, phone, address, role (**buyer / finder / both / not sure yet**),
+  inline validation, in a polished modal.
+- ✅ **Buyer/Finder as the main nav** — hero + CTA adapt per audience; CTA opens signup pre-set to that role.
+- ✅ **Pre-Load** — post-signup nudge + demo wallet deposit → `wallet_entries` ledger + cached balance
+  (no card; real funding = Stripe). Wallet balance/ledger endpoints + nav wallet chip.
+- ✅ **My Account page** — Overview, Current Buys, Past Orders, Finder Jobs, Watchlist, Wallet (ledger),
+  Profile (edit). One `/api/account` call.
+- ✅ **Image uploader UI** — file picker in "mark found" → client-side canvas resize/compress (~1200px JPEG)
+  → signed upload → photo attached; renders on cards.
+- ✅ **Chat UI** — thread panel on active finds (5s polling refresh).
+- ✅ **Watchlist UI** — heart toggle on cards + Watchlist tab.
+- ✅ **Receipt review (manual)** — buyer sees proof photo + note and explicitly confirms before releasing escrow.
+- 💭 **Phone verification via Twilio** — TODO (Verify API: send code → confirm → set `phone_verified`). NOT built.
+- 💭 **Receipt OCR / authenticity** — TODO (see Receipt validator below). NOT built.
 
 ## Receipt validator 💭 (decision needed)
 Uploads land as images already. What should "validate" mean? Options, cheapest → richest:
