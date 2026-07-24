@@ -10,3 +10,4 @@ npm-debug.log*
 
 # os
 .DS_Store
+.env.local

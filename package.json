@@ -7,12 +7,20 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
+    "dev:local": "node --env-file=.env.local server.js",
+    "db:local": "supabase start",
     "migrate": "node scripts/migrate.js",
-    "seed": "node scripts/seed.js"
+    "migrate:local": "node --env-file=.env.local scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "seed:local": "node --env-file=.env.local scripts/seed.js",
+    "storage:local": "node --env-file=.env.local scripts/init-storage.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "dotenv": "^16.4.5",
     "pg": "^8.22.0"
+  },
+  "devDependencies": {
+    "supabase": "^2.109.1"
   }
 }

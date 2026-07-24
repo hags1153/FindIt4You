@@ -16,7 +16,8 @@ const { Client } = require('pg');
     console.error('DATABASE_URL not set. Add it to .env (Supabase → Settings → Database → Connection string → URI).');
     process.exit(1);
   }
-  const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+  const isLocal = /localhost|127\.0\.0\.1/.test(url);
+  const client = new Client({ connectionString: url, ssl: isLocal ? false : { rejectUnauthorized: false } });
   await client.connect();
   await client.query('create table if not exists _migrations (name text primary key, applied_at timestamptz default now())');
 
