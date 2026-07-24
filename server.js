@@ -115,6 +115,28 @@ function shapeFind(r, signed = {}) {
     createdAt: r.created_at,
   };
 }
+const shapeFinds = (rows, signed) => (rows || []).map((r) => shapeFind(r, signed));
+
+// ---- wallet helpers (ledger is source of truth; balance_cents is a cache) ----
+async function getWalletSummary(userId) {
+  const { data: w } = await supabase.from('wallets').select('balance_cents,currency').eq('user_id', userId).single();
+  const { data: entries } = await supabase.from('wallet_entries')
+    .select('id,amount_cents,kind,note,created_at,find_id')
+    .eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+  return {
+    balanceCents: w?.balance_cents ?? 0,
+    currency: w?.currency || 'usd',
+    entries: (entries || []).map((e) => ({
+      id: e.id, amountCents: e.amount_cents, kind: e.kind, note: e.note, createdAt: e.created_at, findId: e.find_id,
+    })),
+  };
+}
+async function recomputeBalance(userId) {
+  const { data } = await supabase.from('wallet_entries').select('amount_cents').eq('user_id', userId);
+  const bal = (data || []).reduce((s, e) => s + e.amount_cents, 0);
+  await supabase.from('wallets').update({ balance_cents: bal, updated_at: new Date().toISOString() }).eq('user_id', userId);
+  return bal;
+}
 
 function serveStatic(req, res) {
   let urlPath = decodeURIComponent(req.url.split('?')[0]);
@@ -159,16 +181,22 @@ const server = http.createServer(async (req, res) => {
       if (!user) return send(res, 401, { error: 'not logged in' });
       const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       if (error) return send(res, 500, { error: error.message });
-      return send(res, 200, { email: user.email, ...data });
+      const { data: w } = await supabase.from('wallets').select('balance_cents').eq('user_id', user.id).single();
+      return send(res, 200, { email: user.email, ...data, walletCents: w?.balance_cents ?? 0 });
     }
 
     if (url === '/api/profile' && req.method === 'POST') {
       if (!user) return send(res, 401, { error: 'not logged in' });
       const b = await readBody(req);
       const patch = {};
-      if (b.role && ['buyer', 'finder', 'both'].includes(b.role)) patch.role = b.role;
-      if (typeof b.full_name === 'string') patch.full_name = clampStr(b.full_name, 120);
-      if (typeof b.region === 'string') patch.region = clampStr(b.region, 120);
+      if (b.role && ['buyer', 'finder', 'both', 'undecided'].includes(b.role)) patch.role = b.role;
+      const strFields = [
+        ['full_name', 120], ['region', 120], ['phone', 40],
+        ['address_line1', 200], ['address_line2', 200], ['city', 120], ['state', 60],
+        ['postal_code', 20], ['avatar_url', 500],
+      ];
+      for (const [k, max] of strFields) if (typeof b[k] === 'string') patch[k] = clampStr(b[k], max);
+      if (typeof b.onboarding_complete === 'boolean') patch.onboarding_complete = b.onboarding_complete;
       const { data, error } = await supabase.from('profiles').update(patch).eq('id', user.id).select().single();
       if (error) return send(res, 500, { error: error.message });
       return send(res, 200, data);
@@ -265,6 +293,77 @@ const server = http.createServer(async (req, res) => {
         if (error) return send(res, 500, { error: error.message });
         return send(res, 201, { id: data.id, createdAt: data.created_at, body, senderId: user.id, mine: true });
       }
+    }
+
+    // ---- wallet: balance + ledger, and a DEMO pre-load (no real charge; Stripe later) ----
+    if (url === '/api/wallet' && req.method === 'GET') {
+      if (!user) return send(res, 401, { error: 'log in' });
+      return send(res, 200, await getWalletSummary(user.id));
+    }
+    if (url === '/api/wallet/deposit' && req.method === 'POST') {
+      if (!user) return send(res, 401, { error: 'log in' });
+      const b = await readBody(req);
+      const amt = Math.round(Number(b.amountCents)); // cents
+      if (!Number.isFinite(amt) || amt < 100 || amt > 500000) return send(res, 400, { error: 'enter an amount between $1 and $5,000' });
+      const { error } = await supabase.from('wallet_entries')
+        .insert({ user_id: user.id, amount_cents: amt, kind: 'deposit', note: 'Pre-load (demo — no real charge)' });
+      if (error) return send(res, 500, { error: error.message });
+      return send(res, 201, { balanceCents: await recomputeBalance(user.id) });
+    }
+
+    // ---- watchlist ----
+    const wlMatch = url.match(/^\/api\/watchlist(?:\/([^/]+))?$/);
+    if (wlMatch) {
+      if (!user) return send(res, 401, { error: 'log in' });
+      const findId = wlMatch[1];
+      if (req.method === 'GET') {
+        const { data: rows } = await supabase.from('watchlist').select('find_id').eq('user_id', user.id);
+        const ids = (rows || []).map((r) => r.find_id);
+        if (!ids.length) return send(res, 200, []);
+        const { data } = await supabase.from('finds').select(FIND_SELECT).in('id', ids).order('created_at', { ascending: false });
+        return send(res, 200, shapeFinds(data, await signPhotos(data || [])));
+      }
+      if (req.method === 'POST' && findId) {
+        const find = await getFind(findId);
+        if (!find) return send(res, 404, { error: 'find not found' });
+        const { error } = await supabase.from('watchlist').upsert({ user_id: user.id, find_id: findId }, { onConflict: 'user_id,find_id' });
+        if (error) return send(res, 500, { error: error.message });
+        return send(res, 201, { ok: true });
+      }
+      if (req.method === 'DELETE' && findId) {
+        await supabase.from('watchlist').delete().eq('user_id', user.id).eq('find_id', findId);
+        return send(res, 200, { ok: true });
+      }
+    }
+
+    // ---- account: everything the My Account page needs, in one call ----
+    if (url === '/api/account' && req.method === 'GET') {
+      if (!user) return send(res, 401, { error: 'log in' });
+      const [{ data: profile }, wallet, { data: buyer }, { data: finder }, { data: wlRows }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        getWalletSummary(user.id),
+        supabase.from('finds').select(FIND_SELECT).eq('buyer_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('finds').select(FIND_SELECT).eq('finder_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('watchlist').select('find_id').eq('user_id', user.id),
+      ]);
+      const wlIds = (wlRows || []).map((r) => r.find_id);
+      let watchRows = [];
+      if (wlIds.length) {
+        const { data } = await supabase.from('finds').select(FIND_SELECT).in('id', wlIds).order('created_at', { ascending: false });
+        watchRows = data || [];
+      }
+      const signed = await signPhotos([...(buyer || []), ...(finder || []), ...watchRows]);
+      const sf = (rows) => shapeFinds(rows, signed);
+      const inSet = (f, s) => s.includes(f.status);
+      return send(res, 200, {
+        profile: { email: user.email, ...profile },
+        wallet,
+        buying: sf((buyer || []).filter((f) => inSet(f, ['open', 'claimed', 'found']))),
+        pastOrders: sf((buyer || []).filter((f) => inSet(f, ['completed', 'cancelled']))),
+        finding: sf((finder || []).filter((f) => inSet(f, ['claimed', 'found']))),
+        finderPast: sf((finder || []).filter((f) => f.status === 'completed')),
+        watchlist: sf(watchRows),
+      });
     }
 
     return send(res, 404, { error: 'unknown endpoint' });
